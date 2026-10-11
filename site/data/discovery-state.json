@@ -1,19 +1,19 @@
 {
-  "last_scan_at": "2026-10-10T13:42:25Z",
+  "last_scan_at": "2026-10-11T14:03:10Z",
   "quarantine": [
     {
-      "count": 3,
+      "count": 2,
       "reason": "past-only"
     }
   ],
   "schema_version": 1,
   "sources": [
     {
-      "candidates": 8,
+      "candidates": 6,
       "error": "",
       "id": "openreview-active-venues",
-      "last_attempt_at": "2026-10-10T13:42:25Z",
-      "last_success_at": "2026-10-10T13:42:25Z",
+      "last_attempt_at": "2026-10-11T14:03:10Z",
+      "last_success_at": "2026-10-11T14:03:10Z",
       "name": "OpenReview active venues",
       "requests": 12,
       "status": "ok"
@@ -22,8 +22,8 @@
       "candidates": 0,
       "error": "",
       "id": "developers-events-cfps",
-      "last_attempt_at": "2026-10-10T13:42:25Z",
-      "last_success_at": "2026-10-10T13:42:25Z",
+      "last_attempt_at": "2026-10-11T14:03:10Z",
+      "last_success_at": "2026-10-11T14:03:10Z",
       "name": "developers.events CFP feed",
       "requests": 1,
       "status": "ok"
@@ -32,30 +32,30 @@
       "candidates": 30,
       "error": "",
       "id": "confs-tech",
-      "last_attempt_at": "2026-10-10T13:42:25Z",
-      "last_success_at": "2026-10-10T13:42:25Z",
+      "last_attempt_at": "2026-10-11T14:03:10Z",
+      "last_success_at": "2026-10-11T14:03:10Z",
       "name": "confs.tech conference data",
       "requests": 12,
       "status": "ok"
     },
     {
-      "candidates": 18,
+      "candidates": 17,
       "error": "",
       "id": "hackclub-hackathons",
-      "last_attempt_at": "2026-10-10T13:42:25Z",
-      "last_success_at": "2026-10-10T13:42:25Z",
+      "last_attempt_at": "2026-10-11T14:03:10Z",
+      "last_success_at": "2026-10-11T14:03:10Z",
       "name": "Hack Club Hackathons",
       "requests": 1,
       "status": "ok"
     }
   ],
   "summary": {
-    "added": 12,
-    "candidates_seen": 56,
-    "duplicates": 41,
-    "quarantined": 3,
+    "added": 1,
+    "candidates_seen": 53,
+    "duplicates": 50,
+    "quarantined": 2,
     "sources_attempted": 4,
     "sources_succeeded": 4,
-    "updated": 39
+    "updated": 48
   }
 }
