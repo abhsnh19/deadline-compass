@@ -225,3 +225,35 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  alert:
+    # A failed daily run leaves the site quietly stale. Say so where the
+    # owner will see it: one open issue, closed again by the next success.
+    needs: [refresh, build, deploy]
+    if: always() && github.event_name == 'schedule'
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or close the refresh-failure issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create compass-refresh-failed \
+            --color B84A32 --description "The daily refresh or deploy failed" \
+            >/dev/null 2>&1 || true
+          OPEN=$(gh issue list --label compass-refresh-failed --state open --limit 1 --json number --jq '.[0].number // empty')
+          if [ "$FAILED" = "true" ]; then
+            if [ -n "$OPEN" ]; then
+              gh issue comment "$OPEN" --body "Failed again on $(date -u +%F): $RUN_URL"
+            else
+              gh issue create --label compass-refresh-failed \
+                --title "Daily refresh failed on $(date -u +%F)" \
+                --body "The scheduled refresh, build, or deploy did not succeed, so the live site was not updated. Run: $RUN_URL"
+            fi
+          elif [ -n "$OPEN" ]; then
+            gh issue close "$OPEN" --comment "Recovered on $(date -u +%F): $RUN_URL"
+          fi
