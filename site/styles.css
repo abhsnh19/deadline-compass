@@ -698,3 +698,81 @@ noscript {
   font-size: 0.9rem;
 }
 .forwarded-note strong { color: var(--ink); }
+
+/* Starring, calendar export, and corrections. */
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.filter-actions .clear-button { margin-top: 0; }
+
+.filters label.toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.86rem;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 1.1rem;
+  min-height: 0;
+  height: 1.1rem;
+  padding: 0;
+  accent-color: var(--teal);
+}
+
+.toggle small { color: var(--ink-soft); font-weight: 600; }
+
+.results-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: center;
+}
+
+.button.small {
+  min-height: 0;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.78rem;
+}
+
+.button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.star-button {
+  margin-left: auto;
+  padding: 0 0.15rem;
+  color: var(--gold);
+  background: none;
+  border: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.star-button[aria-pressed="false"] { color: #9aa5b1; }
+.star-button:hover { color: var(--gold); }
+
+.card-topline { align-items: center; }
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.card-actions .link-button { color: var(--teal-dark); font-weight: 800; }
+.card-actions a { color: var(--ink-soft); }
+.card-actions a:hover { color: var(--coral); }

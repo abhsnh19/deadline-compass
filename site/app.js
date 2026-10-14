@@ -1,10 +1,13 @@
 import { BRAND } from "./brand.js";
+import { buildIcs } from "./calendar.js";
 import {
   activeGate,
+  deadlineCutoff,
   deadlineLabel,
   deadlineStatus,
   matchesFilters,
   sortEvents,
+  timezoneKnown,
   uniqueValues,
   withArchivedCycles,
 } from "./logic.js";
@@ -16,7 +19,9 @@ const EVENT_TYPES = [
   "Industry conference",
   "Hackathon",
   "Open-source meetup",
+  "Workshop",
 ];
+const STAR_KEY = `${BRAND.slug}:starred`;
 const state = {
   phase: "loading",
   events: [],
@@ -25,6 +30,7 @@ const state = {
   sourceCheckedAt: "",
   coverageNotice: "",
   discoveryState: null,
+  starred: loadStarred(),
 };
 
 const form = document.querySelector("#filters");
@@ -34,6 +40,27 @@ const loadMore = document.querySelector("#load-more");
 const clearFilters = document.querySelector("#clear-filters");
 const freshness = document.querySelector("#freshness");
 const scanSummary = document.querySelector("#scan-summary");
+const exportIcs = document.querySelector("#export-ics");
+const starredCount = document.querySelector("#starred-count");
+
+// Stars live only in this browser. Storage can be missing or blocked
+// (private windows, embedded previews), so every access is guarded.
+function loadStarred() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STAR_KEY) || "[]");
+    return new Set(Array.isArray(saved) ? saved.filter((id) => typeof id === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveStarred() {
+  try {
+    localStorage.setItem(STAR_KEY, JSON.stringify([...state.starred].sort()));
+  } catch {
+    // Stars still work for this visit.
+  }
+}
 
 document.querySelectorAll("[data-brand]").forEach((node) => {
   node.textContent = BRAND.name;
@@ -99,6 +126,7 @@ function filtersFromForm() {
     mode: String(data.get("mode") || ""),
     status: String(data.get("status") || ""),
     sort: String(data.get("sort") || "deadline"),
+    starred: data.get("starred") ? "1" : "",
   };
 }
 
@@ -114,7 +142,9 @@ function syncUrl(filters) {
 function restoreUrl() {
   const params = new URLSearchParams(location.search);
   for (const element of form.elements) {
-    if (element.name && params.has(element.name)) element.value = params.get(element.name);
+    if (!element.name || !params.has(element.name)) continue;
+    if (element.type === "checkbox") element.checked = params.get(element.name) === element.value;
+    else element.value = params.get(element.name);
   }
 }
 
@@ -158,6 +188,39 @@ function forwardedNote(event) {
     </p>`;
 }
 
+const localCutoff = new Intl.DateTimeFormat(undefined, {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZoneName: "short",
+});
+
+function cutoffNote(gate, timezone) {
+  if (!gate) return "";
+  const cutoff = deadlineCutoff(gate.date, timezone);
+  const local = cutoff ? `${localCutoff.format(cutoff)} your time` : "";
+  return timezoneKnown(timezone)
+    ? `Closes 23:59 ${timezone}${local ? ` · ${local}` : ""}`
+    : `Cutoff time not published · counted as 23:59 AoE${local ? ` (${local})` : ""}`;
+}
+
+function correctionUrl(event) {
+  const params = new URLSearchParams({
+    title: `Correction: ${event.acronym} ${event.edition}`,
+    body: [
+      `Event: ${event.name} (${event.acronym} ${event.edition})`,
+      `ID: ${event.id}`,
+      `Listed source: ${event.source_url}`,
+      "",
+      "What is wrong, and where did you confirm the correct details?",
+      "",
+    ].join("\n"),
+  });
+  return `${BRAND.repository}/issues/new?${params}`;
+}
+
 function card(event) {
   const status = deadlineStatus(event);
   const gate = activeGate(event);
@@ -166,14 +229,16 @@ function card(event) {
     ? event.confidence
     : "projected";
   const topics = event.topics.map((topic) => `<span class="chip">${escapeHtml(topic)}</span>`).join("");
-  const timezone = event.deadlines.timezone === "See source"
-    ? "Time not normalized — check source"
-    : `Deadline timezone: ${event.deadlines.timezone}`;
+  const timezone = cutoffNote(gate, event.deadlines.timezone) || "No submission date yet";
+  const starred = state.starred.has(event.id);
   return `
     <article class="event-card" data-status="${status}">
       <div class="card-topline">
         <span class="status-pill status-${status}">${statusTitle(status)}</span>
         <span class="confidence confidence-${confidence}">${escapeHtml(confidence)}</span>
+        <button type="button" class="star-button" data-star="${escapeHtml(event.id)}"
+                aria-pressed="${starred}" aria-label="${starred ? "Unstar" : "Star"} ${escapeHtml(event.name)}"
+                title="${starred ? "Remove from" : "Add to"} your starred list">${starred ? "★" : "☆"}</button>
       </div>
       <div class="card-heading">
         <div>
@@ -208,6 +273,10 @@ function card(event) {
          aria-label="Check the official source for ${escapeHtml(event.name)} (opens in a new tab)">
         Check the official source <span aria-hidden="true">↗</span>
       </a>
+      <div class="card-actions">
+        <button type="button" class="link-button" data-ics="${escapeHtml(event.id)}">Add to calendar</button>
+        ${BRAND.repository ? `<a href="${escapeHtml(correctionUrl(event))}" target="_blank" rel="noopener noreferrer">Report a correction</a>` : ""}
+      </div>
     </article>`;
 }
 
@@ -215,7 +284,8 @@ function render() {
   if (state.phase !== "ready") return;
   const filters = filtersFromForm();
   state.filtered = sortEvents(
-    state.events.filter((event) => matchesFilters(event, filters)),
+    state.events.filter((event) => (!filters.starred || state.starred.has(event.id))
+      && matchesFilters(event, filters)),
     filters.sort,
   );
   const shown = state.filtered.slice(0, state.visible);
@@ -224,7 +294,9 @@ function render() {
     : `<div class="empty-state">
         <span aria-hidden="true">⌁</span>
         <h2>No matching opportunities</h2>
-        <p>Broaden a filter or clear them to return to the full index.</p>
+        <p>${filters.starred && !state.starred.size
+          ? "You have not starred anything yet. Use ☆ on a card to keep it here."
+          : "Broaden a filter or clear them to return to the full index."}</p>
         <button class="button secondary" type="button" data-clear>Clear filters</button>
       </div>`;
   const summary = `Showing ${shown.length.toLocaleString()} of ${state.filtered.length.toLocaleString()} matching opportunities`;
@@ -235,6 +307,8 @@ function render() {
     ? `${summary} · <button type="button" class="link-button" data-show-archived>${archived.toLocaleString()} archived hidden</button>`
     : summary;
   loadMore.hidden = shown.length >= state.filtered.length;
+  exportIcs.disabled = !state.filtered.length;
+  starredCount.textContent = state.starred.size ? `(${state.starred.size})` : "";
   syncUrl(filters);
 }
 
@@ -372,7 +446,40 @@ loadMore.addEventListener("click", () => {
   state.visible += PAGE_SIZE;
   render();
 });
+function downloadCalendar(events, filename, options) {
+  const blob = new Blob([buildIcs(events, { name: BRAND.name, ...options })], {
+    type: "text/calendar;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = Object.assign(document.createElement("a"), { href: url, download: filename });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+exportIcs.addEventListener("click", () => {
+  downloadCalendar(state.filtered, `${BRAND.slug}.ics`, { futureOnly: true });
+});
+
 results.addEventListener("click", (event) => {
+  const star = event.target.closest("[data-star]");
+  if (star) {
+    const id = star.dataset.star;
+    if (state.starred.has(id)) state.starred.delete(id);
+    else state.starred.add(id);
+    saveStarred();
+    render();
+    // render() replaced the card; keep keyboard focus on its star.
+    results.querySelector(`[data-star="${CSS.escape(id)}"]`)?.focus();
+    return;
+  }
+  const ics = event.target.closest("[data-ics]");
+  if (ics) {
+    const record = state.events.find((item) => item.id === ics.dataset.ics);
+    if (record) downloadCalendar([record], `${record.id}.ics`);
+    return;
+  }
   if (event.target.closest("[data-clear]")) clearFilters.click();
   if (event.target.closest("[data-retry]")) loadData();
 });

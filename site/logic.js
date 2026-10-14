@@ -71,10 +71,24 @@ function cutoffOffset(timezone) {
   return `${match[1]}${match[2].padStart(2, "0")}:${match[3] || "00"}`;
 }
 
-export function deadlineExpired(isoDate, timezone, now = new Date()) {
-  if (!isoDate) return false;
+/** True when the record names a zone we can convert; otherwise AoE is assumed. */
+export function timezoneKnown(timezone) {
+  return Boolean(ZONE_OFFSETS[timezone]) || /^UTC[+-]\d{1,2}(?::\d{2})?$/.test(timezone || "");
+}
+
+/**
+ * The instant a date-only deadline closes: 23:59:59 in its zone, or in AoE —
+ * the latest zone on Earth — when the source does not say.
+ */
+export function deadlineCutoff(isoDate, timezone) {
+  if (!isoDate) return null;
   const cutoff = Date.parse(`${isoDate}T23:59:59${cutoffOffset(timezone)}`);
-  return Number.isFinite(cutoff) && now.getTime() > cutoff;
+  return Number.isFinite(cutoff) ? new Date(cutoff) : null;
+}
+
+export function deadlineExpired(isoDate, timezone, now = new Date()) {
+  const cutoff = deadlineCutoff(isoDate, timezone);
+  return cutoff !== null && now.getTime() > cutoff.getTime();
 }
 
 export function activeGate(event, now = new Date()) {

@@ -89,6 +89,13 @@ class BuildDataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "real YYYY-MM-DD date"):
             build_data.validate([event])
 
+    def test_validation_rejects_deadline_after_event_end(self) -> None:
+        event = copy.deepcopy(self.event)
+        event["event_end"] = "2026-09-25"
+        event["event_start"] = "2026-09-24"
+        with self.assertRaisesRegex(ValueError, "falls after event_end"):
+            build_data.validate([event])
+
     def test_validation_rejects_private_paths_independently(self) -> None:
         for path in (
             r"See ..\private\notes.md",

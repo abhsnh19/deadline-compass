@@ -632,6 +632,36 @@ class AcronymTests(unittest.TestCase):
         for name in ("The Asia-Pacific Satellite Event of ACM WebSci - WebSciX 2026", "All Day AI", "Tenth Annual Conference on Machine Learning and Systems"):
             self.assertNotIn(discovery.derive_acronym(name), {"The", "All", "Tenth", "Annual"})
 
+    def test_ordinals_and_host_venues_are_not_badges(self) -> None:
+        cases = {
+            "NeurIPS 2026 Second Workshop on MLxOR": "MLxOR",
+            "1st Workshop on Agile Development and Verification for Chips at MICRO 2026": "ADVC",
+            "TRUSTMORE 2026: 1st International Workshop on Trustworthy Multimodal Agents": "TRUSTMORE",
+            "2nd Annual Data Day": "DataDay",
+        }
+        for name, expected in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(discovery.derive_acronym(name), expected)
+
+    def test_workshops_get_their_own_type(self) -> None:
+        self.assertEqual(discovery.infer_type("Workshop on Data Systems"), "Workshop")
+        self.assertEqual(discovery.infer_type("Workshop Hackathon"), "Hackathon")
+        self.assertEqual(discovery.infer_type("Data Council"), "Industry conference")
+
+    def test_earlier_discoveries_are_renormalized_with_stable_ids(self) -> None:
+        event = {
+            "id": "discovered-1st-2026-abc", "acronym": "1st", "event_type": "Academic conference",
+            "name": "1st Workshop on Agile Chips at MICRO 2026", "discovery": {},
+        }
+        discovery.renormalize_discovered(event)
+        self.assertEqual(
+            (event["id"], event["acronym"], event["event_type"]),
+            ("discovered-1st-2026-abc", "AgileChips", "Workshop"),
+        )
+        curated = {"acronym": "1st", "event_type": "Academic conference", "name": "1st Workshop on X"}
+        discovery.renormalize_discovered(curated)
+        self.assertEqual(curated["acronym"], "1st")
+
 
 class CuratedDuplicateTests(unittest.TestCase):
     def setUp(self) -> None:

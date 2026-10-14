@@ -356,6 +356,8 @@ def infer_type(name: str) -> str:
     lowered = name.casefold()
     if "hackathon" in lowered or re.search(r"\bhack\b", lowered):
         return "Hackathon"
+    if re.search(r"\bworkshop\b", lowered):
+        return "Workshop"
     if "summit" in lowered:
         return "Summit"
     if any(term in lowered for term in ("meetup", "community day", "fosdem", "open source", "kcd ")):
@@ -611,7 +613,7 @@ def discover_openreview(source: dict[str, Any], *, fetch: Callable[[str], Any] =
             continue
         location = clean_text(content_value(content, "location")) or "TBA"
         candidates.append(Candidate(
-            external_id=venue_id, title=name, event_type="Academic conference",
+            external_id=venue_id, title=name, event_type="Workshop" if re.search(r"\bworkshop\b", name, re.IGNORECASE) else "Academic conference",
             organizer="OpenReview venue chairs", venue_url=venue_url,
             source_url=source["documentation_url"], deadline=deadline,
             event_start=start, event_end=start, location=location,
@@ -681,6 +683,11 @@ ACRONYM_STOPWORDS = {
     "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth",
     "conference", "summit", "symposium", "workshop", "event", "meetup",
 }
+ORDINAL = re.compile(r"\d+(?:st|nd|rd|th)", re.IGNORECASE)
+# "... Workshop on X at MICRO 2026" or "NeurIPS 2026 Second Workshop on X":
+# the host venue's name is not the workshop's own short name.
+WORKSHOP_HOST_SUFFIX = re.compile(r"\s+(?:at|@|co-located with|in conjunction with)\s+.*$", re.IGNORECASE)
+WORKSHOP_HOST_PREFIX = re.compile(r"^\S+\s+(?:19|20)\d{2}\s+(?=.*\bworkshop\b)", re.IGNORECASE)
 # Camel-case words that are product names, not event short names.
 CAMEL_WORDS = {"javascript", "typescript", "github", "gitlab", "postgresql", "devops", "webassembly", "youtube"}
 
@@ -690,8 +697,10 @@ def derive_acronym(name: str) -> str:
     parenthesized = re.search(r"\(([A-Za-z][A-Za-z0-9+]{1,17})\)", name)
     if parenthesized:
         return parenthesized.group(1)
+    if re.search(r"\bworkshop\b", name, re.IGNORECASE):
+        name = WORKSHOP_HOST_PREFIX.sub("", WORKSHOP_HOST_SUFFIX.sub("", name)) or name
     tokens = [re.sub(r"[^A-Za-z0-9+-]", "", token) for token in name.split()]
-    tokens = [token for token in tokens if re.search(r"[A-Za-z]", token)]
+    tokens = [token for token in tokens if re.search(r"[A-Za-z]", token) and not ORDINAL.fullmatch(token)]
     # A mixed-case or letter+digit token (WebSciX, MLSys, CityJS, swampUP) is
     # almost always the venue's own short name.
     mixed = [
@@ -710,6 +719,7 @@ def derive_acronym(name: str) -> str:
         re.sub(r"[^A-Za-z0-9+]", "", token)
         for token in main.split()
         if token.casefold().strip(".,'") not in ACRONYM_STOPWORDS
+        and not ORDINAL.fullmatch(token.strip(".,'"))
     ]
     words = [word for word in words if re.search(r"[A-Za-z]", word)]
     if not words:
@@ -806,6 +816,20 @@ def curated_match(event: dict[str, Any], curated: list[dict[str, Any]]) -> dict[
     return None
 
 
+def renormalize_discovered(event: dict[str, Any]) -> None:
+    """Re-apply the current badge and type rules to an earlier discovery.
+
+    The ID stays as it was, so links and dedupe keys remain stable.
+    """
+    if "discovery" not in event:
+        return
+    event["acronym"] = derive_acronym(event["name"])
+    if event["event_type"] in {"Academic conference", "Industry conference"} and re.search(
+        r"\bworkshop\b", event["name"], re.IGNORECASE
+    ):
+        event["event_type"] = "Workshop"
+
+
 def merge_candidates(events: list[dict[str, Any]], batches: list[tuple[dict[str, Any], list[Candidate]]], *, scan_at: str, today: dt.date, max_additions: int, max_per_source: int = 8) -> tuple[list[dict[str, Any]], dict[str, int], dict[str, int]]:
     merged = copy.deepcopy(events)
     url_index: dict[tuple[str, str], dict[str, Any]] = {}
@@ -828,6 +852,7 @@ def merge_candidates(events: list[dict[str, Any]], batches: list[tuple[dict[str,
             )
 
     for event in merged:
+        renormalize_discovered(event)
         add_to_indexes(event)
     curated = [event for event in merged if "discovery" not in event]
     stats = {"added": 0, "updated": 0, "duplicates": 0, "quarantined": 0}

@@ -25,6 +25,7 @@ EVENT_TYPES = {
     "Industry conference",
     "Hackathon",
     "Open-source meetup",
+    "Workshop",
 }
 MODES = {"In person", "Online", "Hybrid", "TBA"}
 ORGANIZATION_GROUPS = {
@@ -359,6 +360,12 @@ def validate(events: list[Event]) -> None:
                     errors.append(f"{label}: {field} must be a real YYYY-MM-DD date, got {value!r}")
         if event["event_start"] and event["event_end"] and event["event_end"] < event["event_start"]:
             errors.append(f"{label}: event_end precedes event_start")
+        late = [
+            date for date in (event["deadlines"]["abstract"], event["deadlines"]["paper"])
+            if isinstance(date, str) and date and event["event_end"] and date > event["event_end"]
+        ]
+        if late:
+            errors.append(f"{label}: submission deadline {late[0]} falls after event_end")
         if (
             event["deadlines"]["abstract"]
             and event["deadlines"]["paper"]

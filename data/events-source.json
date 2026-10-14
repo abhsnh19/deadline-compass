@@ -19869,7 +19869,7 @@
       ]
     },
     {
-      "acronym": "1st",
+      "acronym": "ADVC",
       "categories": [
         "Other"
       ],
@@ -19894,7 +19894,7 @@
       "edition": "2026",
       "event_end": "2026-10-31",
       "event_start": "2026-10-31",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-1st-2026-17a88d9dcd",
       "indexing": "",
       "location": "Athens, Greece",
@@ -19909,7 +19909,7 @@
       ]
     },
     {
-      "acronym": "2nd",
+      "acronym": "AIBDA",
       "categories": [
         "Data & databases"
       ],
@@ -20802,7 +20802,7 @@
       "edition": "2026",
       "event_end": "2026-11-09",
       "event_start": "2026-11-09",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-arrsi-2026-5a16e1fbce",
       "indexing": "",
       "location": "Hengqin, China",
@@ -20842,7 +20842,7 @@
       "edition": "2026",
       "event_end": "2026-12-11",
       "event_start": "2026-12-11",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-metaagents-2026-6130b54029",
       "indexing": "",
       "location": "Sydney, Australia",
@@ -21882,7 +21882,7 @@
       ]
     },
     {
-      "acronym": "NeurIPS",
+      "acronym": "MLxOR",
       "categories": [
         "Other"
       ],
@@ -21907,7 +21907,7 @@
       "edition": "2026",
       "event_end": "2026-12-13",
       "event_start": "2026-12-13",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-neurips-2026-2bf088e58a",
       "indexing": "",
       "location": "Atlanta, USA",
@@ -22465,7 +22465,7 @@
       "edition": "2026",
       "event_end": "2026-11-09",
       "event_start": "2026-11-09",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-sltcpr-2026-6600bab722",
       "indexing": "",
       "location": "Hengqin, China",
@@ -22793,7 +22793,7 @@
       ]
     },
     {
-      "acronym": "1st",
+      "acronym": "ERWMAAS",
       "categories": [
         "Other"
       ],
@@ -22818,7 +22818,7 @@
       "edition": "2026",
       "event_end": "2026-11-05",
       "event_start": "2026-11-05",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-1st-2026-4c7666fc76",
       "indexing": "",
       "location": "San Francisco, USA",
@@ -22858,7 +22858,7 @@
       "edition": "2026",
       "event_end": "2026-12-05",
       "event_start": "2026-12-05",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-musiml-2026-8777302231",
       "indexing": "",
       "location": "Sydney, Australia",
@@ -22993,7 +22993,7 @@
       ]
     },
     {
-      "acronym": "1st",
+      "acronym": "TRUSTMORE",
       "categories": [
         "Programming languages"
       ],
@@ -23018,7 +23018,7 @@
       "edition": "2026",
       "event_end": "2026-12-14",
       "event_start": "2026-12-14",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-1st-2026-567c34cf47",
       "indexing": "",
       "location": "Phoenix, Arizona, USA (Hybrid)",
@@ -23098,7 +23098,7 @@
       "edition": "2026",
       "event_end": "2026-12-12",
       "event_start": "2026-12-12",
-      "event_type": "Academic conference",
+      "event_type": "Workshop",
       "id": "discovered-unireps-2026-3e52a318fe",
       "indexing": "",
       "location": "Paris, France",

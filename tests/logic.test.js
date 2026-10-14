@@ -1,14 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
+import { buildIcs } from "../site/calendar.js";
 import {
   activeGate,
+  deadlineCutoff,
   deadlineExpired,
   daysUntil,
   deadlineLabel,
   deadlineStatus,
   matchesFilters,
   sortEvents,
+  timezoneKnown,
   uniqueValues,
   withArchivedCycles,
 } from "../site/logic.js";
@@ -212,4 +215,61 @@ test("unique values flatten and sort filter facets", () => {
     event({ categories: ["AI & machine learning", "Security & privacy"] }),
   ], (item) => item.categories);
   assert.deepEqual(values, ["AI & machine learning", "Security & privacy", "Systems & cloud"]);
+});
+
+test("cutoffs fall at 23:59:59 in the named zone, or AoE when unknown", () => {
+  assert.equal(deadlineCutoff("2026-10-17", "AoE").toISOString(), "2026-10-18T11:59:59.000Z");
+  assert.equal(deadlineCutoff("2026-10-17", "PDT").toISOString(), "2026-10-18T06:59:59.000Z");
+  assert.equal(deadlineCutoff("2026-10-17", "UTC+5:30").toISOString(), "2026-10-17T18:29:59.000Z");
+  assert.equal(deadlineCutoff("2026-10-17", "See source").toISOString(), "2026-10-18T11:59:59.000Z");
+  assert.equal(deadlineCutoff("", "AoE"), null);
+  assert.equal(timezoneKnown("AoE"), true);
+  assert.equal(timezoneKnown("UTC-7"), true);
+  assert.equal(timezoneKnown("See source"), false);
+});
+
+test("calendar export has timed submission reminders and all-day milestones", () => {
+  const record = event({
+    id: "test-2027",
+    source_url: "https://example.org/cfp",
+    location: "Lisbon, Portugal",
+    event_end: "2027-03-03",
+    deadlines: {
+      gates: [{ date: "2026-09-20", kind: "Abstract" }, { date: "2026-09-27", kind: "Paper" }],
+      abstract: "2026-09-20",
+      paper: "2026-09-27",
+      notification: "2026-12-01",
+      camera_ready: "",
+      timezone: "AoE",
+    },
+  });
+  const ics = buildIcs([record], { now: new Date("2026-09-01T00:00:00Z") });
+  assert.match(ics, /^BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /END:VCALENDAR\r\n$/);
+  assert.match(ics, /UID:test-2027-paper@deadline-compass/);
+  assert.match(ics, /DTEND:20260928T120000Z/);
+  assert.match(ics, /TRIGGER:-P7D/);
+  assert.match(ics, /DTSTART;VALUE=DATE:20261201\r\nDTEND;VALUE=DATE:20261202/);
+  assert.match(ics, /DTSTART;VALUE=DATE:20270301\r\nDTEND;VALUE=DATE:20270304/);
+  assert.match(ics, /LOCATION:Lisbon\\, Portugal/);
+  assert.ok(ics.split("\r\n").every((line) => new TextEncoder().encode(line).length <= 75));
+});
+
+test("bulk calendar export leaves out dates already passed", () => {
+  const record = event({
+    id: "test-2027",
+    source_url: "https://example.org/cfp",
+    deadlines: {
+      gates: [{ date: "2026-09-20", kind: "Abstract" }, { date: "2026-09-27", kind: "Paper" }],
+      abstract: "2026-09-20",
+      paper: "2026-09-27",
+      notification: "",
+      camera_ready: "",
+      timezone: "See source",
+    },
+  });
+  const ics = buildIcs([record], { now: new Date("2026-09-24T00:00:00Z"), futureOnly: true });
+  assert.doesNotMatch(ics, /test-2027-abstract/);
+  assert.match(ics, /test-2027-paper/);
+  assert.match(ics, /Cutoff time not published/);
 });

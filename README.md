@@ -57,6 +57,20 @@ npm run discover:smoke
 
 The command gives each source 18 seconds and the whole scan 60 seconds.
 
+## Personal tools
+
+- **Star** any card (☆) to keep it on a "Starred only" list. Stars are stored
+  in this browser's `localStorage` and never leave the device.
+- **Add to calendar** on a card downloads an `.ics` file with timed reminders
+  (7 days and 1 day before) for abstract and paper cutoffs, plus all-day
+  entries for notification, camera-ready, and the event itself.
+  **Export to calendar** does the same for every current result, skipping
+  dates that have passed. `site/calendar.js` builds the file.
+- Each cutoff is shown in the viewer's local time. When a source does not
+  publish a timezone, the card says so and counts it as 23:59 AoE, the
+  latest it could be.
+- **Report a correction** opens a prefilled issue on `BRAND.repository`.
+
 ## Source and public data schema
 
 Each source event contains:

@@ -56,7 +56,7 @@
       <section class="stats" aria-label="Index summary">
         <div><strong id="stat-total">—</strong><span>curated opportunities</span></div>
         <div><strong id="stat-urgent">—</strong><span>due in 14 days</span></div>
-        <div><strong id="stat-open">—</strong><span>future deadlines</span></div>
+        <div><strong id="stat-open">—</strong><span>open calls</span></div>
         <div><strong id="stat-unannounced">—</strong><span>dates to watch</span></div>
         <div><strong id="stat-archived">—</strong><span>archived</span></div>
       </section>
@@ -105,7 +105,7 @@
                 <option value="">All open calls</option>
                 <option value="urgent">Due within 14 days</option>
                 <option value="open">Due within 45 days</option>
-                <option value="upcoming">Upcoming</option>
+                <option value="upcoming">Due in more than 45 days</option>
                 <option value="unannounced">Date not announced</option>
                 <option value="archived">Archived — deadline passed</option>
               </select>
@@ -120,11 +120,23 @@
               </select>
             </div>
           </div>
-          <button id="clear-filters" class="clear-button" type="button">Reset filters</button>
+          <div class="filter-actions">
+            <label class="toggle" for="starred">
+              <input id="starred" name="starred" type="checkbox" value="1">
+              <span>★ Starred only <small id="starred-count"></small></span>
+            </label>
+            <button id="clear-filters" class="clear-button" type="button">Reset filters</button>
+          </div>
         </form>
 
         <div class="results-bar">
-          <p id="result-summary" aria-live="polite">Loading opportunities…</p>
+          <div class="results-summary">
+            <p id="result-summary" aria-live="polite">Loading opportunities…</p>
+            <button id="export-ics" class="button secondary small" type="button" disabled
+                    title="Download upcoming deadlines for the current results as a calendar file">
+              Export to calendar (.ics)
+            </button>
+          </div>
           <div class="legend" aria-label="Confidence legend">
             <span><i class="legend-dot verified"></i>Verified</span>
             <span><i class="legend-dot announced"></i>Announced</span>
